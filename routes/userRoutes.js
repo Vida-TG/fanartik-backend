@@ -196,7 +196,7 @@ userRouter.post(
         return res.send({
           _id: user._id,
           name: user.name,
-          name: user.username,
+          username: user.username,
           email: user.email,
           isCreator: user.isCreator,
           isAdmin: user.isAdmin,
