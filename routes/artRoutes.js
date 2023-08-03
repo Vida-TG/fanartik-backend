@@ -3,7 +3,7 @@ import expressAsyncHandler from 'express-async-handler';
 import Art from '../models/artModel.js';
 import { isAuth, isCreator, isAdmin, slugify } from '../utils.js';
 import upload from './uploadRoutes.js';
-import fs from 'fs';
+import fs from 'fs/promises';
 import { v2 as cloudinary } from 'cloudinary';
 
 const artRouter = express.Router();
@@ -26,9 +26,7 @@ artRouter.post(
     if (req.file) {
       const result = await cloudinary.uploader.upload(req.file.path);
       imageUrl = result.secure_url;
-      if (fs.existsSync(req.file.path)) {
-        fs.unlinkSync(req.file.path);
-      }
+      await fs.promises.unlink(req.file.path);
     }
   
     const newArt = new Art({
