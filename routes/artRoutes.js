@@ -28,7 +28,7 @@ artRouter.post(
       imageUrl = result.secure_url;
       await fs.promises.unlink(req.file.path);
     }
-  
+  cb(null, Date.now() + file.originalname);
     const newArt = new Art({
       name: payload.name,
       slug: slugify(payload.name) + Date.now(),
