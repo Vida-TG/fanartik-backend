@@ -12,19 +12,19 @@ requestRouter.get('/', isAuth, expressAsyncHandler(async (req, res) => {
   res.send(requests);
 }));
 
-  
+
 requestRouter.get('/create', isAuth, isAdmin, expressAsyncHandler(async (req, res) => {
   const request = await Request.find({user: req.user._id,});
   if (request) return res.send({request: true});
   else return res.send({request: false});
 }));
-  
+
 
 requestRouter.post(
   '/',
   isAuth,
   expressAsyncHandler(async (req, res) => {
-    const request = await Request.find({user: req.user._id,});
+    const request = await Request.findOne({user: req.user._id,});
     if (request) { return res.send({ message: 'You have previously requested' }) }
     const newRequest = new Request({
         user: req.user._id,

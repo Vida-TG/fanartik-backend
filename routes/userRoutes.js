@@ -63,7 +63,7 @@ userRouter.put(
   '/profile',
   isAuth,
   expressAsyncHandler(async (req, res) => {
-    const userExists = await User.find({ username: req.body.username });
+    const userExists = await User.findOne({ username: req.body.username });
     if (userExists) return res.send({message: "Username taken"})
     const user = await User.findById(req.user._id);
     if (user) {

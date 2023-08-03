@@ -19,7 +19,7 @@ bookRouter.post(
   '/creator/:creatorId',
   isAuth,
   expressAsyncHandler(async (req, res) => {
-    const booking = await Book.find({user: req.user._id, creator: creatorId});
+    const booking = await Book.findOne({user: req.user._id, creator: creatorId});
     if (booking) { return res.send({ message: 'You have a pending booking with this artist' }) }
     const newBooking = new Book({
         user: req.user._id,
