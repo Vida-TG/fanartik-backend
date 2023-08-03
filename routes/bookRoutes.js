@@ -23,8 +23,8 @@ bookRouter.post(
     if (booking) { return res.send({ message: 'You have a pending booking with this artist' }) }
     const newBooking = new Book({
         user: req.user._id,
-        price: req.user.price,
-        description: req.user.description,
+        price: req.body.price,
+        description: req.body.description,
         creator: req.params.creatorId,
     });
     await newBooking.save();
