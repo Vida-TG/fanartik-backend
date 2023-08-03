@@ -17,6 +17,34 @@ userRouter.get(
   })
 );
 
+userRouter.get('/creators', expressAsyncHandler(async (req, res) => {
+    const users = await User.find({isCreator: true})
+    res.send(users);
+  })
+);
+
+
+userRouter.put(
+  '/creators/:id',
+  isAuth,
+  isAdmin,
+  expressAsyncHandler(async (req, res) => {
+    const user = await User.findById(req.params.id);
+    if (user) {
+      user.isCreator = !user.isCreator;
+      const updatedUser = await user.save();
+      res.send({
+        _id: updatedUser._id,
+        name: updatedUser.name,
+        isCreator: updatedUser.isCreator,
+      });
+    } else {
+      res.status(404).send({ message: 'User not found' });
+    }
+  })
+);
+
+
 userRouter.get(
   '/:id',
   isAuth,
@@ -35,9 +63,12 @@ userRouter.put(
   '/profile',
   isAuth,
   expressAsyncHandler(async (req, res) => {
+    const userExists = await User.find({ username: req.body.username });
+    if (userExists) return res.send({message: "Username taken"})
     const user = await User.findById(req.user._id);
     if (user) {
       user.name = req.body.name || user.name;
+      user.username = req.body.username || user.username;
       user.email = req.body.email || user.email;
       if (req.body.password) {
         user.password = bcrypt.hashSync(req.body.password, 8);
@@ -146,7 +177,7 @@ userRouter.delete(
     const user = await User.findById(req.params.id);
     if (user) {
       if (user.email === 'admin@example.com') {
-        res.status(400).send({ message: 'Can Not Delete Admin User' });
+        res.status(400).send({ message: 'Cannot Delete Admin User' });
         return;
       }
       await user.remove();
@@ -179,15 +210,18 @@ userRouter.post(
 userRouter.post(
   '/signup',
   expressAsyncHandler(async (req, res) => {
+    const initialUsername = `${req.body.name.replaceAll(" ", "_")}${Math.random().toString().substring(2, 12)}`
     const newUser = new User({
       name: req.body.name,
       email: req.body.email,
+      username: initialUsername,
       password: bcrypt.hashSync(req.body.password),
     });
-    const user = await newUser.save();
+    const user = await newUser.save();    
     res.send({
       _id: user._id,
       name: user.name,
+      username: user.username,
       email: user.email,
       isAdmin: user.isAdmin,
       token: generateToken(user),

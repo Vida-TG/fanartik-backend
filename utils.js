@@ -23,6 +23,17 @@ export const generateToken = (user) => {
   );
 };
 
+
+export const slugify = (str) => {
+	return str
+		.toLowerCase()
+		.trim()
+		.replace(/[^\w\s-]/g, "")
+		.replace(/[\s_-]+/g, "-")
+		.replace(/^-+|-+$/g, "");
+}
+
+
 export const isAuth = (req, res, next) => {
   const authorization = req.headers.authorization;
   if (authorization) {
@@ -45,6 +56,14 @@ export const isAdmin = (req, res, next) => {
     next();
   } else {
     res.status(401).send({ message: 'Invalid Admin Token' });
+  }
+};
+
+export const isCreator = (req, res, next) => {
+  if (req.user && req.user.isCreator) {
+    next();
+  } else {
+    res.status(401).send({ message: 'Invalid Creator Token' });
   }
 };
 

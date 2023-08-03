@@ -7,6 +7,8 @@ import seedRouter from "./routes/seedRoutes.js";
 import artRouter from "./routes/artRoutes.js";
 import userRouter from "./routes/userRoutes.js";
 import orderRouter from "./routes/orderRoutes.js";
+import bookRouter from "./routes/bookRoutes.js";
+import requestRouter from "./routes/requestRoutes.js";
 import uploadRouter from "./routes/uploadRoutes.js";
 
 dotenv.config();
@@ -27,18 +29,20 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.get("/api/keys/paypal", (req, res) => {
+app.get("https://fanartiks.onrender.com/api/keys/paypal", (req, res) => {
   res.send(process.env.PAYPAL_CLIENT_ID || "sb");
 });
-app.get("/api/keys/google", (req, res) => {
+app.get("https://fanartiks.onrender.com/api/keys/google", (req, res) => {
   res.send({ key: process.env.GOOGLE_API_KEY || "" });
 });
 
-app.use("/api/upload", uploadRouter);
-app.use("/api/seed", seedRouter);
-app.use("/api/arts", artRouter);
-app.use("/api/users", userRouter);
-app.use("/api/orders", orderRouter);
+app.use("https://fanartiks.onrender.com/api/upload", uploadRouter);
+app.use("https://fanartiks.onrender.com/api/seed", seedRouter);
+app.use("https://fanartiks.onrender.com/api/arts", artRouter);
+app.use("https://fanartiks.onrender.com/api/users", userRouter);
+app.use("https://fanartiks.onrender.com/api/requests", requestRouter);
+app.use("https://fanartiks.onrender.com/api/bookings", bookRouter);
+app.use("https://fanartiks.onrender.com/api/orders", orderRouter);
 
 const __dirname = path.resolve();
 app.use(express.static(path.join(__dirname, "/frontend/build")));

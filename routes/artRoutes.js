@@ -1,7 +1,7 @@
 import express from 'express';
 import expressAsyncHandler from 'express-async-handler';
 import Art from '../models/artModel.js';
-import { isAuth, isAdmin } from '../utils.js';
+import { isAuth, isCreator, isAdmin, slugify } from '../utils.js';
 
 const artRouter = express.Router();
 
@@ -13,19 +13,19 @@ artRouter.get('/', async (req, res) => {
 artRouter.post(
   '/',
   isAuth,
-  isAdmin,
+  isCreator,
   expressAsyncHandler(async (req, res) => {
+    const payload = req.body
     const newArt = new Art({
-      name: 'sample name ' + Date.now(),
-      slug: 'sample-name-' + Date.now(),
-      image: '/images/p1.jpg',
-      price: 0,
-      category: 'sample category',
-      brand: 'sample brand',
-      countInStock: 0,
-      rating: 0,
-      numReviews: 0,
-      description: 'sample description',
+      name: payload.name,
+      slug: slugify(payload.name) + Date.now(),
+      image: payload.image,
+      images: payload.images,
+      price: payload.price,
+      category: payload.price,
+      noOfPieces: payload.noOfPieces,
+      description: payload.description,
+      creator: req.user._id,
     });
     const art = await newArt.save();
     res.send({ message: 'Art Created', art });
@@ -46,8 +46,7 @@ artRouter.put(
       art.image = req.body.image;
       art.images = req.body.images;
       art.category = req.body.category;
-      art.brand = req.body.brand;
-      art.countInStock = req.body.countInStock;
+      art.noOfPieces = req.body.noOfPieces;
       art.description = req.body.description;
       await art.save();
       res.send({ message: 'Art Updated' });
@@ -66,42 +65,6 @@ artRouter.delete(
     if (art) {
       await art.remove();
       res.send({ message: 'Art Deleted' });
-    } else {
-      res.status(404).send({ message: 'Art Not Found' });
-    }
-  })
-);
-
-artRouter.post(
-  '/:id/reviews',
-  isAuth,
-  expressAsyncHandler(async (req, res) => {
-    const artId = req.params.id;
-    const art = await Art.findById(artId);
-    if (art) {
-      if (art.reviews.find((x) => x.name === req.user.name)) {
-        return res
-          .status(400)
-          .send({ message: 'You already submitted a review' });
-      }
-
-      const review = {
-        name: req.user.name,
-        rating: Number(req.body.rating),
-        comment: req.body.comment,
-      };
-      art.reviews.push(review);
-      art.numReviews = art.reviews.length;
-      art.rating =
-        art.reviews.reduce((a, c) => c.rating + a, 0) /
-        art.reviews.length;
-      const updatedArt = await art.save();
-      res.status(201).send({
-        message: 'Review Created',
-        review: updatedArt.reviews[updatedArt.reviews.length - 1],
-        numReviews: art.numReviews,
-        rating: art.rating,
-      });
     } else {
       res.status(404).send({ message: 'Art Not Found' });
     }
@@ -140,7 +103,6 @@ artRouter.get(
     const page = query.page || 1;
     const category = query.category || '';
     const price = query.price || '';
-    const rating = query.rating || '';
     const order = query.order || '';
     const searchQuery = query.query || '';
 
@@ -154,14 +116,6 @@ artRouter.get(
           }
         : {};
     const categoryFilter = category && category !== 'all' ? { category } : {};
-    const ratingFilter =
-      rating && rating !== 'all'
-        ? {
-            rating: {
-              $gte: Number(rating),
-            },
-          }
-        : {};
     const priceFilter =
       price && price !== 'all'
         ? {
@@ -179,17 +133,12 @@ artRouter.get(
         ? { price: 1 }
         : order === 'highest'
         ? { price: -1 }
-        : order === 'toprated'
-        ? { rating: -1 }
-        : order === 'newest'
-        ? { createdAt: -1 }
         : { _id: -1 };
 
     const arts = await Art.find({
       ...queryFilter,
       ...categoryFilter,
       ...priceFilter,
-      ...ratingFilter,
     })
       .sort(sortOrder)
       .skip(pageSize * (page - 1))
@@ -199,7 +148,6 @@ artRouter.get(
       ...queryFilter,
       ...categoryFilter,
       ...priceFilter,
-      ...ratingFilter,
     });
     res.send({
       arts,
