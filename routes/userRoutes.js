@@ -13,13 +13,13 @@ userRouter.get(
   isAdmin,
   expressAsyncHandler(async (req, res) => {
     const users = await User.find({});
-    res.send(users);
+    return res.send(users);
   })
 );
 
 userRouter.get('/creators', expressAsyncHandler(async (req, res) => {
     const users = await User.find({isCreator: true})
-    res.send(users);
+    return res.send(users);
   })
 );
 
@@ -33,13 +33,13 @@ userRouter.put(
     if (user) {
       user.isCreator = !user.isCreator;
       const updatedUser = await user.save();
-      res.send({
+      return res.send({
         _id: updatedUser._id,
         name: updatedUser.name,
         isCreator: updatedUser.isCreator,
       });
     } else {
-      res.status(404).send({ message: 'User not found' });
+      return res.status(404).send({ message: 'User not found' });
     }
   })
 );
@@ -52,7 +52,7 @@ userRouter.get(
   expressAsyncHandler(async (req, res) => {
     const user = await User.findById(req.params.id);
     if (user) {
-      res.send(user);
+      return res.send(user);
     } else {
       res.status(404).send({ message: 'User Not Found' });
     }
@@ -75,7 +75,7 @@ userRouter.put(
       }
 
       const updatedUser = await user.save();
-      res.send({
+      return res.send({
         _id: updatedUser._id,
         name: updatedUser.name,
         email: updatedUser.email,
@@ -120,7 +120,7 @@ userRouter.post(
             console.log(body);
           }
         );
-      res.send({ message: 'We sent reset password link to your email.' });
+      return res.send({ message: 'We sent reset password link to your email.' });
     } else {
       res.status(404).send({ message: 'User not found' });
     }
@@ -139,7 +139,7 @@ userRouter.post(
           if (req.body.password) {
             user.password = bcrypt.hashSync(req.body.password, 8);
             await user.save();
-            res.send({
+            return res.send({
               message: 'Password reseted successfully',
             });
           }
@@ -162,7 +162,7 @@ userRouter.put(
       user.email = req.body.email || user.email;
       user.isAdmin = Boolean(req.body.isAdmin);
       const updatedUser = await user.save();
-      res.send({ message: 'User Updated', user: updatedUser });
+      return res.send({ message: 'User Updated', user: updatedUser });
     } else {
       res.status(404).send({ message: 'User Not Found' });
     }
@@ -181,7 +181,7 @@ userRouter.delete(
         return;
       }
       await user.remove();
-      res.send({ message: 'User Deleted' });
+      return res.send({ message: 'User Deleted' });
     } else {
       res.status(404).send({ message: 'User Not Found' });
     }
@@ -193,7 +193,7 @@ userRouter.post(
     const user = await User.findOne({ email: req.body.email });
     if (user) {
       if (bcrypt.compareSync(req.body.password, user.password)) {
-        res.send({
+        return res.send({
           _id: user._id,
           name: user.name,
           email: user.email,
@@ -218,7 +218,7 @@ userRouter.post(
       password: bcrypt.hashSync(req.body.password),
     });
     const user = await newUser.save();    
-    res.send({
+    return res.send({
       _id: user._id,
       name: user.name,
       username: user.username,
