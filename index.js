@@ -9,7 +9,6 @@ import userRouter from "./routes/userRoutes.js";
 import orderRouter from "./routes/orderRoutes.js";
 import bookRouter from "./routes/bookRoutes.js";
 import requestRouter from "./routes/requestRoutes.js";
-import uploadRouter from "./routes/uploadRoutes.js";
 
 dotenv.config();
 
@@ -36,7 +35,7 @@ app.get("/api/keys/google", (req, res) => {
   res.send({ key: process.env.GOOGLE_API_KEY || "" });
 });
 
-app.use("/api/upload", uploadRouter);
+
 app.use("/api/seed", seedRouter);
 app.use("/api/arts", artRouter);
 app.use("/api/users", userRouter);
