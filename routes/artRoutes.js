@@ -24,9 +24,13 @@ artRouter.post(
     
     let imageUrl = "https://raw.githubusercontent.com/Vida-TG/fanartik-frontend/main/default.png";
     if (req.file) {
+      
+      console.log("0")
       const result = await cloudinary.uploader.upload(req.file.path);
       imageUrl = result.secure_url;
+      console.log("1")
       await fs.promises.unlink(req.file.path);
+      console.log("11")
     }
   cb(null, Date.now() + file.originalname);
     const newArt = new Art({
