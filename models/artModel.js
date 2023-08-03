@@ -6,7 +6,7 @@ const artSchema = new mongoose.Schema(
     slug: { type: String, required: true, unique: true },
     image: { type: String, required: true },
     images: [String],
-    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    creator: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     category: { type: String, required: true },
     description: { type: String, required: true },
     price: { type: Number, required: true },

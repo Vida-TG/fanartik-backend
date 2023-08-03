@@ -211,8 +211,7 @@ userRouter.post(
 userRouter.post(
   '/signup',
   expressAsyncHandler(async (req, res) => {
-    let name = req.body.name
-    const initialUsername = `${name.replaceAll(" ", "_")}${Math.random().toString().substring(2, 12)}`
+    const initialUsername = `${req.body.name.replace(/\s+/g, '_')}${Math.random().toString().substring(2, 12)}`
     const newUser = new User({
       name: req.body.name,
       email: req.body.email,
