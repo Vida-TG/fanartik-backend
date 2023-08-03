@@ -14,7 +14,7 @@ requestRouter.get('/', isAuth, expressAsyncHandler(async (req, res) => {
 
 
 requestRouter.get('/create', isAuth, isAdmin, expressAsyncHandler(async (req, res) => {
-  const request = await Request.find({user: req.user._id,});
+  const request = await Request.findOne({user: req.user._id,});
   if (request) return res.send({request: true});
   else return res.send({request: false});
 }));
