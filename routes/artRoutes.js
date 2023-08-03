@@ -2,6 +2,9 @@ import express from 'express';
 import expressAsyncHandler from 'express-async-handler';
 import Art from '../models/artModel.js';
 import { isAuth, isCreator, isAdmin, slugify } from '../utils.js';
+import upload from './uploadRoutes.js';
+import fs from 'fs';
+import { v2 as cloudinary } from 'cloudinary';
 
 const artRouter = express.Router();
 
@@ -10,16 +13,26 @@ artRouter.get('/', async (req, res) => {
   res.send(arts);
 });
 
+
 artRouter.post(
   '/',
   isAuth,
   isCreator,
+  upload.single('image'), 
   expressAsyncHandler(async (req, res) => {
     const payload = req.body
+    
+    let imageUrl = "https://raw.githubusercontent.com/Vida-TG/fanartik-frontend/main/default.png";
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.path);
+      imageUrl = result.secure_url;
+      fs.unlinkSync(req.file.path);
+    }
+  
     const newArt = new Art({
       name: payload.name,
       slug: slugify(payload.name) + Date.now(),
-      image: payload.image,
+      image: imageUrl,
       images: payload.images,
       price: payload.price,
       category: payload.price,
