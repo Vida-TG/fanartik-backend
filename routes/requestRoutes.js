@@ -45,6 +45,7 @@ requestRouter.post(
       if (request && user) {
         user.isCreator = true;
         await user.save();
+        await request.remove();
         res.send({ message: 'Successful' });
       } else {
         res.status(404).send({ message: 'An error occured' });
