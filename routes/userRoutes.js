@@ -123,12 +123,10 @@ userRouter.put(
   isAuth,
   upload.single('image'), 
   expressAsyncHandler(async (req, res) => {
-    console.log("1")
     const userExists = await User.findOne({ username: req.body.username });
     if (userExists && userExists._id.toString() !== req.user._id.toString()) {
       throw new Error('Username is already taken');
     }
-    console.log("1")
     const user = await User.findById(req.user._id);
     let imageUrl;
     console.log("imgInit")
