@@ -3,6 +3,10 @@ import bcrypt from 'bcryptjs';
 import expressAsyncHandler from 'express-async-handler';
 import jwt from 'jsonwebtoken';
 import User from '../models/userModel.js';
+import Art from '../models/artModel.js'
+import upload from '../uploadUtils.js';
+import fs from 'fs';
+import { v2 as cloudinary } from 'cloudinary';
 import { isAuth, isAdmin, generateToken, baseUrl, mailgun } from '../utils.js';
 
 const userRouter = express.Router();
@@ -45,6 +49,43 @@ userRouter.put(
 );
 
 
+userRouter.get('/top-creators', async (req, res) => {
+  try {
+    const topCreators = await User.aggregate([
+      {
+        $match: { isCreator: true },
+      },
+      {
+        $lookup: {
+          from: 'arts',
+          let: { userId: '$_id' },
+          pipeline: [
+            { $match: { $expr: { $eq: ['$creator', '$$userId'] } } },
+          ],
+          as: 'artworks',
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          name: 1,
+          username: 1,
+          email: 1,
+          artCount: { $size: '$artworks' },
+        },
+      },
+      { $sort: { artCount: -1 } },
+      { $limit: 5 },
+    ]);
+
+    res.status(200).json(topCreators);
+  } catch (err) {
+    res.status(500).json({ message: 'Internal Server Error', error: err });
+  }
+});
+
+
+
 userRouter.get(
   '/:id',
   isAuth,
@@ -59,16 +100,57 @@ userRouter.get(
   })
 );
 
+
+userRouter.get('/creator-profile/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const creator = await User.findById(id);
+    if (!creator || !creator.isCreator) {
+      return res.status(404).json({ message: 'Creator not found' });
+    }
+
+    const arts = await Art.find({ creator: creator._id }).select('name image price');
+    const totalArts = await Art.countDocuments({ creator: creator._id });
+    res.status(200).json({ creator, arts, totalArts });
+  } catch (err) {
+    res.status(500).json({ message: 'Internal Server Error', error: err });
+  }
+});
+
 userRouter.put(
   '/profile',
   isAuth,
+  upload.single('image'), 
   expressAsyncHandler(async (req, res) => {
+    console.log("1")
     const userExists = await User.findOne({ username: req.body.username });
-    if (userExists) return res.send({message: "Username taken"})
+    if (userExists && userExists._id.toString() !== req.user._id.toString()) {
+      throw new Error('Username is already taken');
+    }
+    console.log("1")
     const user = await User.findById(req.user._id);
+    let imageUrl;
+    console.log("imgInit")
+
     if (user) {
+      console.log("user")
+      if (req.file) {
+        console.log("file")
+        const result = await cloudinary.uploader.upload(req.file.path);
+        imageUrl = result.secure_url;
+        console.log("upload")
+        fs.unlink(req.file.path, (err) => {
+          if (err) {
+            throw new Error('An error occured');
+          } else {
+            console.log('File deleted successfully');
+          }
+        });
+      }
       user.name = req.body.name || user.name;
       user.username = req.body.username || user.username;
+      user.image = imageUrl || "";
       user.email = req.body.email || user.email;
       if (req.body.password) {
         user.password = bcrypt.hashSync(req.body.password, 8);
@@ -78,12 +160,15 @@ userRouter.put(
       return res.send({
         _id: updatedUser._id,
         name: updatedUser.name,
+        username: updatedUser.username,
+        image: updatedUser.image,
         email: updatedUser.email,
+        isCreator: updatedUser.isCreator,
         isAdmin: updatedUser.isAdmin,
         token: generateToken(updatedUser),
       });
     } else {
-      res.status(404).send({ message: 'User not found' });
+      throw new Error('User not found');
     }
   })
 );
@@ -211,7 +296,7 @@ userRouter.post(
 userRouter.post(
   '/signup',
   expressAsyncHandler(async (req, res) => {
-    const initialUsername = `${req.body.name.replace(/\s+/g, '_')}${Math.random().toString().substring(2, 12)}`
+    const initialUsername = `${req.body.name.replace(/\s+/g, '_')}${Math.random().toString().substring(2, 7)}`
     const newUser = new User({
       name: req.body.name,
       email: req.body.email,

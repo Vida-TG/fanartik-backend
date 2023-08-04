@@ -2,8 +2,8 @@ import express from 'express';
 import expressAsyncHandler from 'express-async-handler';
 import Art from '../models/artModel.js';
 import { isAuth, isCreator, isAdmin, slugify } from '../utils.js';
-import upload from './uploadRoutes.js';
-import fs from 'fs/promises';
+import upload from '../uploadUtils.js';
+import fs from 'fs';
 import { v2 as cloudinary } from 'cloudinary';
 
 const artRouter = express.Router();
@@ -12,6 +12,51 @@ artRouter.get('/', async (req, res) => {
   const arts = await Art.find();
   res.send(arts);
 });
+
+
+artRouter.get('/recent-artworks', async (req, res) => {
+  try {
+    const recentArtworks = await Art.find()
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .populate('creator', 'username');
+
+    const formattedArtworks = recentArtworks.map((artwork) => {
+      return {
+        name: artwork.name,
+        slug: artwork.slug,
+        image: artwork.image,
+        price: artwork.price,
+        creator: artwork.creator.username,
+      };
+    });
+
+    res.status(200).json(formattedArtworks);
+  } catch (err) {
+    res.status(500).json({ message: 'Internal Server Error', error: err });
+  }
+});
+
+
+
+artRouter.get('/get-by-category', async (req, res) => {
+  try {
+    const categories = ['painting', 'digital', 'craft'];
+    const recentArtworksByCategory = {};
+
+    for (const category of categories) {
+      const artworks = await Art.find({ category })
+        .sort({ createdAt: -1 })
+        .limit(4);
+      recentArtworksByCategory[category] = artworks;
+    }
+
+    res.status(200).json(recentArtworksByCategory);
+  } catch (err) {
+    res.status(500).json({ message: 'Internal Server Error', error: err });
+  }
+});
+
 
 
 artRouter.post(
@@ -24,15 +69,17 @@ artRouter.post(
     
     let imageUrl = "https://raw.githubusercontent.com/Vida-TG/fanartik-frontend/main/default.png";
     if (req.file) {
-      
-      console.log("0")
       const result = await cloudinary.uploader.upload(req.file.path);
       imageUrl = result.secure_url;
-      console.log("1")
-      await fs.promises.unlink(req.file.path);
-      console.log("11")
+      fs.unlink(req.file.path, (err) => {
+        if (err) {
+          console.error('Error deleting file:', err);
+        } else {
+          console.log('File deleted successfully');
+        }
+      });
     }
-  cb(null, Date.now() + file.originalname);
+
     const newArt = new Art({
       name: payload.name,
       slug: slugify(payload.name) + Date.now(),
@@ -51,16 +98,30 @@ artRouter.post(
 artRouter.put(
   '/:id',
   isAuth,
-  isAdmin,
+  isCreator,
+  upload.single('image'), 
   expressAsyncHandler(async (req, res) => {
     const artId = req.params.id;
     const art = await Art.findById(artId);
+
     if (art) {
+      let imageUrl = ""
+      if (req.file) {
+        const result = await cloudinary.uploader.upload(req.file.path);
+        imageUrl = result.secure_url;
+        fs.unlink(req.file.path, (err) => {
+          if (err) {
+            console.error('Error deleting file:', err);
+          } else {
+            console.log('File deleted successfully');
+          }
+        });
+      }
+
+
       art.name = req.body.name;
-      art.slug = req.body.slug;
       art.price = req.body.price;
-      art.image = req.body.image;
-      art.images = req.body.images;
+      art.image = imageUrl || art.image;
       art.category = req.body.category;
       art.noOfPieces = req.body.noOfPieces;
       art.description = req.body.description;

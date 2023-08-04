@@ -8,7 +8,7 @@ const bookRouter = express.Router();
 
 
 bookRouter.get('/', isAuth, isCreator, expressAsyncHandler(async (req, res) => {
-  const bookings = await Book.find({creator: req.user._id,}).populate('user');
+  const bookings = await Book.find({creator: req.user._id,}).populate('user', '_id', 'name', 'email');
   if (!bookings) return res.send({ message: "You have not gotten any booking yet"});
   return res.send({bookings});
 }));
