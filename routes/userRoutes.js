@@ -129,7 +129,6 @@ userRouter.put(
     }
     const user = await User.findById(req.user._id);
     let imageUrl;
-    console.log("imgInit")
 
     if (user) {
       console.log("user")
@@ -313,5 +312,35 @@ userRouter.post(
     });
   })
 );
+
+
+
+userRouter.post(
+  '/creator-signup',
+  expressAsyncHandler(async (req, res) => {
+    const userExists = await User.findOne({ username: req.body.username });
+    if (userExists && userExists._id.toString() !== req.user._id.toString()) {
+      throw new Error('Username is already taken');
+    }
+    const newUser = new User({
+      name: req.body.name,
+      email: req.body.email,
+      username: req.body.username,
+      isCreator: true,
+      password: bcrypt.hashSync(req.body.password),
+    });
+    const user = await newUser.save();    
+    return res.send({
+      _id: user._id,
+      name: user.name,
+      username: user.username,
+      email: user.email,
+      isCreator: user.isCreator,
+      isAdmin: user.isAdmin,
+      token: generateToken(user),
+    });
+  })
+);
+
 
 export default userRouter;
