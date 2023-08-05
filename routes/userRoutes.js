@@ -293,6 +293,10 @@ userRouter.post(
 userRouter.post(
   '/signup',
   expressAsyncHandler(async (req, res) => {
+    const emailExists = await User.findOne({ email: req.body.email });
+    if (emailExists) {
+      throw new Error('Email is already been used');
+    }
     const initialUsername = `${req.body.name.replace(/\s+/g, '_')}${Math.random().toString().substring(2, 7)}`
     const newUser = new User({
       name: req.body.name,
@@ -319,8 +323,12 @@ userRouter.post(
   '/creator-signup',
   expressAsyncHandler(async (req, res) => {
     const userExists = await User.findOne({ username: req.body.username });
-    if (userExists && userExists._id.toString() !== req.user._id.toString()) {
+    if (userExists) {
       throw new Error('Username is already taken');
+    }
+    const emailExists = await User.findOne({ email: req.body.email });
+    if (emailExists) {
+      throw new Error('Email is already been used');
     }
     const newUser = new User({
       name: req.body.name,
